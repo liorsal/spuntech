@@ -3,199 +3,424 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>בקרת גליל</title>
+<title>בקרת גליל — Spuntech</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Secular+One&display=swap" rel="stylesheet">
 <style>
   :root{
-    --slate:#161A1D;
-    --slate-2:#22282C;
-    --line:#333B41;
+    --void:#0C1114;
+    --panel:#141B21;
+    --panel-2:#1B242B;
+    --line:#28333B;
+    --line-soft:#1F2930;
+    --brand:#1F7FD6;
+    --brand-lite:#5BB0F5;
     --go:#12B76A;
-    --stop:#E03B3B;
-    --stop-deep:#93201F;
+    --go-deep:#0B6B41;
+    --stop:#E04B44;
+    --stop-deep:#7E2320;
     --amber:#F5A524;
-    --ink:#EDF1F3;
-    --mute:#8A969E;
+    --ink:#E9F0F4;
+    --mute:#7C8B96;
+    --display:'Secular One','Assistant',system-ui,sans-serif;
+    --body:'Assistant',system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%}
   body{
-    background:var(--slate);
-    font-family:'Heebo',system-ui,sans-serif;
+    background:var(--void);
+    font-family:var(--body);
     color:var(--ink);
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:clamp(18px,3.5vh,32px);
-    padding:20px;
     overflow:hidden;
   }
+  /* woven-fabric backdrop — a nod to nonwoven filament webs */
   body::before{
-    content:"";position:fixed;inset:0;pointer-events:none;
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
     background:
-      repeating-linear-gradient(90deg,rgba(255,255,255,.022) 0 1px,transparent 1px 64px),
-      repeating-linear-gradient(0deg,rgba(255,255,255,.022) 0 1px,transparent 1px 64px);
+      repeating-linear-gradient(58deg,rgba(91,176,245,.035) 0 1px,transparent 1px 22px),
+      repeating-linear-gradient(-58deg,rgba(255,255,255,.022) 0 1px,transparent 1px 34px),
+      radial-gradient(120% 80% at 50% 0%,rgba(31,127,214,.12),transparent 60%);
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:radial-gradient(100% 70% at 50% 50%,transparent 40%,rgba(0,0,0,.55) 100%);
   }
 
-  /* ---- counter ---- */
-  .counter{position:relative;text-align:center;line-height:1}
-  .counter .num{
-    font-size:clamp(48px,14vw,86px);
-    font-weight:900;
-    letter-spacing:-.03em;
-    font-variant-numeric:tabular-nums;
+  .app{position:relative;z-index:1;display:flex;height:100%}
+
+  /* ---------- chat rail (always open, right side) ---------- */
+  .rail{
+    width:clamp(280px,26vw,360px);flex:none;
+    background:linear-gradient(180deg,var(--panel) 0%,#111820 100%);
+    border-inline-end:1px solid var(--line);
+    display:flex;flex-direction:column;
+    box-shadow:-1px 0 40px rgba(0,0,0,.45);
   }
-  .counter .cap{
-    display:block;margin-top:6px;
-    font-size:clamp(10px,2.4vw,12px);font-weight:700;
-    letter-spacing:.22em;color:var(--mute);
+  .rail-head{padding:16px 18px 12px;border-bottom:1px solid var(--line-soft)}
+  .rail-head h2{
+    font-family:var(--display);font-size:17px;font-weight:400;letter-spacing:.01em;
+    display:flex;align-items:center;gap:8px;
+  }
+  .rail-head h2 .dot{
+    width:8px;height:8px;border-radius:50%;background:var(--go);
+    box-shadow:0 0 10px var(--go);animation:breathe 2.6s ease-in-out infinite;
+  }
+  @keyframes breathe{50%{opacity:.35}}
+  .whoami{margin-top:6px;font-size:12.5px;color:var(--mute);font-weight:600}
+  .whoami b{color:var(--brand-lite);font-weight:800}
+
+  .log{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+  .log::-webkit-scrollbar{width:8px}
+  .log::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px}
+  .msg{font-size:14px;line-height:1.5;animation:slip .18s ease-out}
+  @keyframes slip{from{opacity:0;transform:translateY(5px)}}
+  .msg .meta{font-size:11.5px;font-weight:800;letter-spacing:.02em;margin-bottom:2px}
+  .msg .who{color:var(--amber)}
+  .msg.mine .who{color:var(--brand-lite)}
+  .msg .when{color:var(--mute);font-weight:600;margin-inline-start:6px}
+  .msg .txt{
+    background:var(--panel-2);border:1px solid var(--line-soft);
+    border-radius:12px 12px 12px 4px;padding:8px 11px;word-break:break-word;
+  }
+  .msg.mine .txt{border-color:rgba(31,127,214,.4);background:rgba(31,127,214,.1)}
+  .log .empty{color:var(--mute);font-size:13px;text-align:center;margin:auto 0;line-height:1.7}
+
+  .composer{padding:12px 14px;border-top:1px solid var(--line-soft);display:flex;gap:8px}
+  .composer input{
+    flex:1;min-width:0;background:var(--void);border:1px solid var(--line);
+    color:var(--ink);font-family:inherit;font-size:14.5px;font-weight:600;
+    padding:11px 13px;border-radius:11px;
+  }
+  .composer input::placeholder{color:#5D6B76}
+  .composer button{
+    flex:none;background:var(--brand);color:#fff;border:none;font-family:inherit;
+    font-size:14px;font-weight:800;padding:0 17px;border-radius:11px;cursor:pointer;
+    transition:filter .15s ease;
+  }
+  .composer button:hover{filter:brightness(1.12)}
+
+  /* ---------- stage ---------- */
+  .stage{
+    flex:1;min-width:0;overflow-y:auto;
+    display:flex;flex-direction:column;align-items:center;
+    gap:clamp(12px,2.2vh,24px);padding:clamp(14px,2.5vh,26px) 22px 26px;
+  }
+  .stage>*{flex:none;animation:rise .5s cubic-bezier(.2,.7,.3,1) backwards}
+  .stage>*:nth-child(2){animation-delay:.05s}
+  .stage>*:nth-child(3){animation-delay:.1s}
+  .stage>*:nth-child(4){animation-delay:.15s}
+  .stage>*:nth-child(5){animation-delay:.2s}
+  .stage>*:nth-child(6){animation-delay:.25s}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}}
+
+  /* brand lockup */
+  .brand{display:flex;align-items:center;gap:11px;align-self:flex-start}
+  .brand .mark{filter:drop-shadow(0 3px 10px rgba(31,127,214,.45))}
+  .brand .name{
+    font-family:var(--body);font-weight:800;font-size:21px;
+    letter-spacing:.16em;line-height:1;
+  }
+  .brand .name span{color:var(--brand-lite)}
+  .brand .sub{
+    display:block;font-size:9.5px;font-weight:700;color:var(--mute);
+    letter-spacing:.28em;margin-top:4px;
   }
 
-  /* ---- dial ---- */
+  /* roll number */
+  .rollhead{text-align:center;line-height:1}
+  .rollhead .num{
+    font-family:var(--display);font-size:clamp(46px,9vh,84px);
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+    background:linear-gradient(180deg,#fff,#9FC6E6);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .rollhead .cap{
+    display:block;margin-top:7px;font-size:11px;font-weight:800;
+    letter-spacing:.24em;color:var(--mute);
+  }
+
+  /* dials */
   .dial{
-    position:relative;
-    width:min(66vw,min(42vh,320px));
-    aspect-ratio:1;border-radius:50%;border:none;cursor:pointer;
-    font-family:inherit;display:grid;place-items:center;
-    background:var(--stop);
+    position:relative;width:min(52vw,min(33vh,290px));aspect-ratio:1;
+    border-radius:50%;border:none;cursor:pointer;font-family:var(--display);
+    display:grid;place-items:center;background:var(--stop);
     box-shadow:
-      0 0 0 9px var(--slate-2),0 0 0 11px var(--line),
-      0 20px 40px rgba(0,0,0,.55),
-      inset 0 -12px 26px rgba(0,0,0,.32),
-      inset 0 9px 24px rgba(255,255,255,.16);
-    transition:background .22s ease,box-shadow .22s ease,transform .1s ease;
+      0 0 0 8px var(--panel),0 0 0 10px var(--line),
+      0 22px 44px rgba(0,0,0,.6),
+      inset 0 -14px 28px rgba(0,0,0,.34),
+      inset 0 10px 26px rgba(255,255,255,.17);
+    transition:background .24s ease,box-shadow .24s ease,transform .1s ease;
   }
-  .dial:focus-visible{outline:4px solid #7FD3FF;outline-offset:14px}
+  .dial::after{
+    content:"";position:absolute;inset:14%;border-radius:50%;
+    border:1px solid rgba(255,255,255,.14);pointer-events:none;
+  }
+  .dial:focus-visible{outline:4px solid var(--brand-lite);outline-offset:14px}
   .dial:active{transform:translateY(4px) scale(.985)}
   .dial[data-state="go"]{
     background:var(--go);
     box-shadow:
-      0 0 0 9px var(--slate-2),0 0 0 11px var(--line),
-      0 20px 40px rgba(0,0,0,.55),0 0 64px rgba(18,183,106,.32),
-      inset 0 -12px 26px rgba(0,0,0,.3),
-      inset 0 9px 24px rgba(255,255,255,.2);
+      0 0 0 8px var(--panel),0 0 0 10px var(--line),
+      0 22px 44px rgba(0,0,0,.6),0 0 72px rgba(18,183,106,.34),
+      inset 0 -14px 28px rgba(0,0,0,.3),
+      inset 0 10px 26px rgba(255,255,255,.22);
   }
   .dial .word{
-    font-size:clamp(28px,8vw,54px);font-weight:900;line-height:.98;
-    text-shadow:0 3px 0 rgba(0,0,0,.22);padding:0 10px;
+    font-size:clamp(26px,6.4vh,50px);line-height:.98;color:#0B1013;
+    text-shadow:0 2px 0 rgba(255,255,255,.14);padding:0 12px;
   }
+  .dial.mini{
+    width:clamp(84px,11.5vh,112px);background:var(--panel-2);
+    box-shadow:
+      0 0 0 5px var(--void),0 0 0 6px var(--line),
+      0 10px 22px rgba(0,0,0,.5),
+      inset 0 -6px 13px rgba(0,0,0,.35),
+      inset 0 5px 11px rgba(255,255,255,.07);
+  }
+  .dial.mini::after{inset:16%}
+  .dial.mini .word{font-size:clamp(13px,1.9vh,16px);color:var(--mute);text-shadow:none}
+  .dial.mini[data-state="go"]{
+    background:var(--go);
+    box-shadow:
+      0 0 0 5px var(--void),0 0 0 6px var(--line),
+      0 10px 22px rgba(0,0,0,.5),0 0 38px rgba(18,183,106,.4),
+      inset 0 -6px 13px rgba(0,0,0,.3),
+      inset 0 5px 11px rgba(255,255,255,.18);
+  }
+  .dial.mini[data-state="go"] .word{color:#0B1013}
 
-  /* ---- controls ---- */
-  .bar{
-    position:relative;display:flex;align-items:center;gap:10px;flex-wrap:wrap;
-    justify-content:center;
-  }
-  .chip{
-    background:var(--slate-2);border:1px solid var(--line);color:var(--ink);
-    font-family:inherit;font-size:13px;font-weight:700;
-    padding:10px 16px;border-radius:999px;cursor:pointer;
-    transition:border-color .15s ease,color .15s ease;
-  }
-  .chip:hover{border-color:var(--mute)}
-  .chip:focus-visible{outline:3px solid #7FD3FF;outline-offset:3px}
-  .chip.danger{color:#FF9C9C}
-
+  /* timer line */
   .timerline{
-    position:relative;display:flex;align-items:center;gap:9px;
-    font-size:13px;font-weight:700;color:var(--mute);
-    font-variant-numeric:tabular-nums;
+    display:flex;align-items:center;gap:9px;font-size:13px;font-weight:700;
+    color:var(--mute);font-variant-numeric:tabular-nums;
   }
-  .lamp{width:10px;height:10px;border-radius:50%;background:var(--stop-deep);
-    box-shadow:0 0 12px rgba(224,59,59,.7);transition:background .2s,box-shadow .2s}
+  .lamp{
+    width:9px;height:9px;border-radius:50%;background:var(--stop-deep);
+    box-shadow:0 0 12px rgba(224,75,68,.7);transition:background .2s,box-shadow .2s;
+  }
   .lamp[data-state="go"]{background:var(--go);box-shadow:0 0 12px rgba(18,183,106,.85)}
 
-  select{
-    background:var(--slate-2);border:1px solid var(--line);color:var(--ink);
-    font-family:inherit;font-size:13px;font-weight:700;
-    padding:9px 12px;border-radius:10px;cursor:pointer;
+  /* controls */
+  .bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+  .chip{
+    background:var(--panel);border:1px solid var(--line);color:var(--ink);
+    font-family:inherit;font-size:12.5px;font-weight:700;
+    padding:9px 15px;border-radius:999px;cursor:pointer;
+    transition:border-color .15s ease,color .15s ease,background .15s ease;
   }
+  .chip:hover{border-color:var(--brand);color:var(--brand-lite)}
+  .chip:focus-visible{outline:3px solid var(--brand-lite);outline-offset:3px}
+  .chip.danger{color:#FF9C9C}
+  .chip.danger:hover{border-color:var(--stop);color:#FFB4B4}
+  .chip.tiny{padding:7px 11px;font-size:12px}
+  .chip.on{background:rgba(31,127,214,.16);border-color:var(--brand);color:var(--brand-lite)}
 
-  /* ---- alert ---- */
+  .timeset{
+    display:flex;align-items:center;gap:7px;background:var(--panel);
+    border:1px solid var(--line);border-radius:999px;padding:5px 6px 5px 14px;
+  }
+  .timeset label{font-size:12.5px;font-weight:700;color:var(--mute)}
+  .timeset input{
+    width:62px;background:var(--void);border:1px solid var(--line);color:var(--ink);
+    font-family:inherit;font-size:14px;font-weight:800;text-align:center;
+    padding:7px 4px;border-radius:8px;
+  }
+  .timeset input:focus-visible{outline:3px solid var(--brand-lite);outline-offset:2px}
+
+  /* notes board */
+  .notes{
+    width:min(620px,100%);background:var(--panel);
+    border:1px solid var(--line);border-radius:16px;padding:14px 16px;
+    position:relative;overflow:hidden;
+  }
+  .notes::before{
+    content:"";position:absolute;inset-block:0;inset-inline-start:0;width:3px;
+    background:linear-gradient(180deg,var(--amber),transparent);
+  }
+  .notes-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px;
+  }
+  .notes-head h3{
+    font-family:var(--display);font-weight:400;font-size:14.5px;
+    display:flex;align-items:center;gap:7px;
+  }
+  .notes-head h3 em{
+    font-style:normal;font-family:var(--body);font-size:10.5px;font-weight:700;
+    color:var(--mute);letter-spacing:.06em;
+  }
+  .notes-body{
+    font-size:14.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;
+    max-height:118px;overflow-y:auto;color:#D3DEE6;
+  }
+  .notes-body.empty{color:var(--mute);font-style:italic}
+
+  /* ---------- modals ---------- */
   .veil{
-    position:fixed;inset:0;z-index:20;display:none;
-    place-items:center;padding:24px;
-    background:rgba(10,12,14,.86);backdrop-filter:blur(6px);
+    position:fixed;inset:0;z-index:30;display:none;place-items:center;padding:24px;
+    background:rgba(8,11,13,.86);backdrop-filter:blur(7px);
   }
   .veil.on{display:grid}
   .card{
-    background:var(--slate-2);border:2px solid var(--amber);
-    border-radius:22px;padding:clamp(26px,6vw,40px);
-    text-align:center;max-width:420px;width:100%;
-    box-shadow:0 24px 60px rgba(0,0,0,.6);
+    background:var(--panel);border:1px solid var(--line);border-top:2px solid var(--amber);
+    border-radius:20px;padding:clamp(24px,5vw,34px);text-align:center;
+    max-width:430px;width:100%;box-shadow:0 26px 64px rgba(0,0,0,.65);
     animation:pop .2s ease-out;
   }
-  @keyframes pop{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
-  .card h2{font-size:clamp(26px,7vw,38px);font-weight:900;margin-bottom:10px}
-  .card p{color:var(--mute);font-size:14px;font-weight:700;margin-bottom:22px}
+  @keyframes pop{from{transform:scale(.95);opacity:0}}
+  .card h2{font-family:var(--display);font-weight:400;font-size:clamp(23px,5.5vw,32px);margin-bottom:9px}
+  .card p{color:var(--mute);font-size:13.5px;font-weight:700;margin-bottom:20px}
   .card button{
-    width:100%;background:var(--amber);color:#1A1204;border:none;
-    font-family:inherit;font-size:17px;font-weight:900;
-    padding:16px;border-radius:14px;cursor:pointer;
+    width:100%;background:var(--amber);color:#1A1204;border:none;font-family:inherit;
+    font-size:16px;font-weight:800;padding:15px;border-radius:13px;cursor:pointer;
   }
   .card button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+  .card .ghost{
+    background:transparent;color:var(--mute);border:1px solid var(--line);margin-top:9px;
+  }
+  .card input[type="password"],.card textarea{
+    width:100%;background:var(--void);border:1px solid var(--line);color:var(--ink);
+    font-family:inherit;font-size:16px;font-weight:700;padding:13px;
+    border-radius:12px;margin-bottom:13px;
+  }
+  .card textarea{min-height:150px;resize:vertical;font-weight:400;line-height:1.6;text-align:right}
+  .card input:focus-visible,.card textarea:focus-visible{outline:3px solid var(--brand-lite);outline-offset:2px}
+  .passerr{color:#FF9C9C;font-size:13px;font-weight:700;margin:-5px 0 12px}
 
+  @media (max-width:900px){
+    body{overflow:auto}
+    .app{flex-direction:column;height:auto;min-height:100%}
+    .stage{order:1}
+    .rail{order:2;width:auto;height:min(70vh,440px);border-inline-end:none;border-top:1px solid var(--line)}
+  }
   @media (prefers-reduced-motion:reduce){
-    .dial,.lamp{transition:none}.dial:active{transform:none}.card{animation:none}
+    .dial,.lamp{transition:none}.dial:active{transform:none}
+    .card,.msg,.stage>*{animation:none}
+    .rail-head h2 .dot{animation:none}
   }
 </style>
 </head>
 <body>
 
-  <div class="counter">
-    <span class="num" id="count">0</span>
-    <span class="cap">גלילים במשמרת</span>
+<div class="app">
+
+  <aside class="rail">
+    <div class="rail-head">
+      <h2><span class="dot"></span>צ'אט מעבדה</h2>
+      <p class="whoami">אתה מחובר בתור <b id="chatMe">…</b></p>
+    </div>
+    <div class="log" id="chatLog"></div>
+    <div class="composer">
+      <input type="text" id="chatInput" maxlength="500" autocomplete="off" placeholder="כתוב הודעה…">
+      <button id="chatSend">שלח</button>
+    </div>
+  </aside>
+
+  <main class="stage">
+
+    <div class="brand">
+      <svg class="mark" width="42" height="42" viewBox="0 0 42 42" fill="none" aria-hidden="true">
+        <rect x="1" y="1" width="40" height="40" rx="12" fill="#101820" stroke="#28333B"/>
+        <path d="M9 27c5-9 8-13 12-13s4 5 0 7-8-2-3-8" stroke="#1F7FD6" stroke-width="2.6" stroke-linecap="round"/>
+        <path d="M13 33c8-4 12-11 18-11" stroke="#5BB0F5" stroke-width="2.2" stroke-linecap="round" opacity=".85"/>
+        <path d="M11 15c6 2 13 1 20-5" stroke="#5BB0F5" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
+        <circle cx="31.5" cy="12" r="2" fill="#5BB0F5"/>
+      </svg>
+      <div>
+        <div class="name">SPUN<span>TECH</span></div>
+        <span class="sub">בקרת גליל</span>
+      </div>
+    </div>
+
+    <div class="rollhead">
+      <span class="num" id="count">0</span>
+      <span class="cap">מספר גליל במשמרת</span>
+    </div>
+
+    <button class="dial" id="dial" data-state="stop" aria-pressed="false">
+      <span class="word" id="word">לא בדיקה</span>
+    </button>
+
+    <button class="dial mini" id="printDial" data-state="stop" aria-pressed="false">
+      <span class="word">הדפסה</span>
+    </button>
+
+    <p class="timerline">
+      <span class="lamp" id="lamp" data-state="stop"></span>
+      <span id="clock">תזכורת בעוד 30:00</span>
+    </p>
+
+    <div class="bar">
+      <div class="timeset">
+        <label for="interval">תזכורת כל</label>
+        <input type="number" id="interval" min="1" max="600" step="1" value="30" inputmode="numeric" aria-label="מרווח תזכורת בדקות">
+        <span style="font-size:12.5px;font-weight:700;color:var(--mute)">דק'</span>
+      </div>
+      <button class="chip tiny preset" data-min="10">10</button>
+      <button class="chip tiny preset" data-min="15">15</button>
+      <button class="chip tiny preset" data-min="30">30</button>
+      <button class="chip tiny preset" data-min="60">60</button>
+      <button class="chip" id="undo">ביטול אחרון</button>
+      <button class="chip danger" id="reset">איפוס משמרת</button>
+    </div>
+
+    <section class="notes">
+      <div class="notes-head">
+        <h3>הערות אחראי אריזה <em id="notesMeta"></em></h3>
+        <button class="chip tiny" id="notesEdit">ערוך</button>
+      </div>
+      <div class="notes-body empty" id="notesBody">אין הערות כרגע</div>
+    </section>
+
+  </main>
+</div>
+
+<div class="veil" id="veil" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle">
+  <div class="card">
+    <h2 id="alertTitle">עשית בדיקה?</h2>
+    <p>עברו <span id="elapsed">30</span> דקות מהבדיקה האחרונה</p>
+    <button id="ack">בדקתי, המשך</button>
   </div>
+</div>
 
-  <button class="dial" id="dial" data-state="stop" aria-pressed="false">
-    <span class="word" id="word">לא בדיקה</span>
-  </button>
-
-  <p class="timerline">
-    <span class="lamp" id="lamp" data-state="stop"></span>
-    <span id="clock">תזכורת בעוד 30:00</span>
-  </p>
-
-  <div class="bar">
-    <select id="interval" aria-label="מרווח תזכורת">
-      <option value="10">כל 10 דקות</option>
-      <option value="15">כל 15 דקות</option>
-      <option value="30" selected>כל 30 דקות</option>
-      <option value="60">כל שעה</option>
-    </select>
-    <button class="chip" id="undo">ביטול אחרון</button>
-    <button class="chip danger" id="reset">איפוס משמרת</button>
-  </div>
-
-  <div class="veil" id="veil" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle">
-    <div class="card">
-      <h2 id="alertTitle">עשית בדיקה?</h2>
-      <p>עברו <span id="elapsed">30</span> דקות מהבדיקה האחרונה</p>
-      <button id="ack">בדקתי, המשך</button>
+<div class="veil" id="notesVeil" role="dialog" aria-modal="true" aria-labelledby="notesTitle">
+  <div class="card">
+    <h2 id="notesTitle">הערות אחראי אריזה</h2>
+    <div id="lockView">
+      <p>אזור מוגן — הזן סיסמה</p>
+      <input type="password" id="passInput" inputmode="numeric" autocomplete="off" placeholder="סיסמה">
+      <p class="passerr" id="passErr" hidden>סיסמה שגויה</p>
+      <button id="unlockBtn">כניסה</button>
+      <button class="ghost" id="lockClose">סגור</button>
+    </div>
+    <div id="editView" hidden>
+      <p>ההערות מוצגות לכל המחשבים במסך הראשי</p>
+      <textarea id="notesText" placeholder="כתוב כאן הערות למשמרת…"></textarea>
+      <button id="notesSave">שמור</button>
+      <button class="ghost" id="notesClose">סגור</button>
     </div>
   </div>
+</div>
 
 <script>
   const $ = id => document.getElementById(id);
   const dial=$('dial'), word=$('word'), lamp=$('lamp'), clock=$('clock'),
         countEl=$('count'), veil=$('veil'), ack=$('ack'), elapsed=$('elapsed'),
-        intervalSel=$('interval'), resetBtn=$('reset'), undoBtn=$('undo');
+        intervalInput=$('interval'), resetBtn=$('reset'), undoBtn=$('undo');
 
   let go=false, count=0, minutes=30, deadline=Date.now()+minutes*60000;
 
-  /* optional persistence — degrades silently when unavailable */
   const KEY='roll-check-shift';
-  async function save(){
-    try{ await window.storage.set(KEY, JSON.stringify({count,go})); }catch(e){}
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify({count,go,minutes})); }catch(e){}
   }
-  async function load(){
+  function load(){
     try{
-      const r = await window.storage.get(KEY);
-      if(r){ const d=JSON.parse(r.value); count=d.count||0; go=!!d.go; }
+      const d=JSON.parse(localStorage.getItem(KEY)||'null');
+      if(d){ count=d.count||0; go=!!d.go; minutes=d.minutes||30; }
     }catch(e){}
-    render();
+    intervalInput.value=minutes;
+    resetTimer(); render(); markPreset();
   }
 
   function render(){
@@ -231,13 +456,14 @@
     elapsed.textContent = minutes;
     veil.classList.add('on');
     clock.textContent = 'ממתין לאישור';
-    ack.focus();
-    beep();
+    ack.focus(); beep();
     if(navigator.vibrate) navigator.vibrate([200,100,200]);
   }
 
+  /* a roll is counted when the dial turns to "בדיקה" */
   dial.addEventListener('click',()=>{
-    go=!go; count++;
+    go=!go;
+    if(go) count++;
     resetTimer(); render(); save();
     if(navigator.vibrate) navigator.vibrate(30);
   });
@@ -247,12 +473,24 @@
     resetTimer(); tick();
   });
 
-  intervalSel.addEventListener('change',e=>{
-    minutes=+e.target.value; resetTimer(); tick();
+  function markPreset(){
+    document.querySelectorAll('.preset').forEach(b=>{
+      b.classList.toggle('on', +b.dataset.min===minutes);
+    });
+  }
+  function applyMinutes(v){
+    const n=Math.min(600,Math.max(1,Math.round(v)||1));
+    minutes=n; intervalInput.value=n;
+    resetTimer(); tick(); markPreset(); save();
+  }
+  intervalInput.addEventListener('change',e=>applyMinutes(+e.target.value));
+  document.querySelectorAll('.preset').forEach(b=>{
+    b.addEventListener('click',()=>applyMinutes(+b.dataset.min));
   });
 
   undoBtn.addEventListener('click',()=>{
-    if(count>0){ count--; go=!go; render(); save(); }
+    if(go) count=Math.max(0,count-1);
+    go=!go; render(); save();
   });
 
   resetBtn.addEventListener('click',()=>{
@@ -261,9 +499,114 @@
     }
   });
 
+  /* ---- print button: green for 3 minutes, then back to gray ---- */
+  const printDial=$('printDial');
+  let printTimer=null;
+  printDial.addEventListener('click',()=>{
+    clearTimeout(printTimer);
+    const on = printDial.dataset.state!=='go';
+    printDial.dataset.state = on?'go':'stop';
+    printDial.setAttribute('aria-pressed',String(on));
+    if(on) printTimer=setTimeout(()=>{
+      printDial.dataset.state='stop';
+      printDial.setAttribute('aria-pressed','false');
+    },3*60*1000);
+    if(navigator.vibrate) navigator.vibrate(20);
+  });
+
+  /* ---- shared state: chat + notes (server, animal name per IP) ---- */
+  const chatLog=$('chatLog'), chatInput=$('chatInput'), chatSend=$('chatSend'),
+        chatMe=$('chatMe'), notesBody=$('notesBody'), notesMeta=$('notesMeta');
+  const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML;};
+  let myName='';
+
+  function paintNotes(n){
+    const txt=(n&&n.text||'').trim();
+    notesBody.textContent = txt || 'אין הערות כרגע';
+    notesBody.classList.toggle('empty', !txt);
+    notesMeta.textContent = txt && n.by ? `· עודכן ע"י ${n.by} ב-${n.time}` : '';
+  }
+
+  async function pull(){
+    try{
+      const r=await fetch('/api/state');
+      if(!r.ok) throw 0;
+      const d=await r.json();
+      myName=d.you; chatMe.textContent=d.you;
+      const atBottom = chatLog.scrollTop+chatLog.clientHeight >= chatLog.scrollHeight-40;
+      chatLog.innerHTML = d.messages.length
+        ? d.messages.map(m=>
+            `<div class="msg${m.name===d.you?' mine':''}">`+
+            `<div class="meta"><span class="who">${esc(m.name)}</span>`+
+            `<span class="when">${esc(m.time)}</span></div>`+
+            `<div class="txt">${esc(m.text)}</div></div>`).join('')
+        : '<div class="empty">אין הודעות עדיין<br>תהיה הראשון לכתוב</div>';
+      if(atBottom) chatLog.scrollTop=chatLog.scrollHeight;
+      paintNotes(d.notes);
+    }catch(e){
+      chatLog.innerHTML='<div class="empty" style="color:#FF9C9C">'+
+        'הצ׳אט זמין רק דרך שרת האתר<br>(python3 server.py)</div>';
+    }
+  }
+
+  async function sendMsg(){
+    const t=chatInput.value.trim();
+    if(!t) return;
+    chatInput.value='';
+    try{
+      await fetch('/api/chat',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({text:t})});
+    }catch(e){}
+    pull(); chatInput.focus();
+  }
+  chatSend.addEventListener('click',sendMsg);
+  chatInput.addEventListener('keydown',e=>{ if(e.key==='Enter') sendMsg(); });
+
+  /* ---- notes editing (password protected) ---- */
+  const NOTES_PASS='1111';
+  const notesVeil=$('notesVeil'), notesEdit=$('notesEdit'), lockView=$('lockView'),
+        editView=$('editView'), passInput=$('passInput'), passErr=$('passErr'),
+        unlockBtn=$('unlockBtn'), lockClose=$('lockClose'),
+        notesText=$('notesText'), notesSave=$('notesSave'), notesClose=$('notesClose');
+  let unlocked=false;
+
+  async function openEditor(){
+    notesText.value = notesBody.classList.contains('empty') ? '' : notesBody.textContent;
+    lockView.hidden=true; editView.hidden=false; notesText.focus();
+  }
+  notesEdit.addEventListener('click',()=>{
+    notesVeil.classList.add('on');
+    if(unlocked){ openEditor(); }
+    else{
+      lockView.hidden=false; editView.hidden=true;
+      passInput.value=''; passErr.hidden=true; passInput.focus();
+    }
+  });
+  function tryUnlock(){
+    if(passInput.value===NOTES_PASS){ unlocked=true; passErr.hidden=true; openEditor(); }
+    else{ passErr.hidden=false; passInput.value=''; passInput.focus(); }
+  }
+  unlockBtn.addEventListener('click',tryUnlock);
+  passInput.addEventListener('keydown',e=>{ if(e.key==='Enter') tryUnlock(); });
+  lockClose.addEventListener('click',()=>notesVeil.classList.remove('on'));
+  notesClose.addEventListener('click',()=>notesVeil.classList.remove('on'));
+  notesSave.addEventListener('click',async()=>{
+    try{
+      await fetch('/api/notes',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({text:notesText.value,pass:NOTES_PASS})});
+    }catch(e){}
+    notesSave.textContent='נשמר ✓';
+    setTimeout(()=>{ notesSave.textContent='שמור'; },1200);
+    pull();
+  });
+
   load();
   tick();
   setInterval(tick,1000);
+  pull();
+  setInterval(pull,3000);
 </script>
 </body>
 </html>
