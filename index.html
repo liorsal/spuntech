@@ -116,29 +116,49 @@
   .stage>*:nth-child(6){animation-delay:.25s}
   @keyframes rise{from{opacity:0;transform:translateY(14px)}}
 
+  /* top bar: brand (right, RTL) + roll counter (left) */
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;width:100%}
+
   /* brand lockup */
-  .brand{display:flex;align-items:center;gap:11px;align-self:flex-start}
-  .brand .mark{filter:drop-shadow(0 3px 10px rgba(31,127,214,.45))}
-  .brand .name{
-    font-family:var(--body);font-weight:800;font-size:21px;
-    letter-spacing:.16em;line-height:1;
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand .mark{
+    background:#fff;border-radius:10px;padding:4px 6px;
+    box-shadow:0 3px 10px rgba(0,0,0,.35);
   }
-  .brand .name span{color:var(--brand-lite)}
+  .brand .name{
+    font-family:var(--body);font-weight:800;font-size:19px;
+    letter-spacing:.02em;line-height:1;color:var(--ink);
+  }
   .brand .sub{
-    display:block;font-size:9.5px;font-weight:700;color:var(--mute);
-    letter-spacing:.28em;margin-top:4px;
+    display:block;font-size:9px;font-weight:700;color:var(--mute);
+    letter-spacing:.26em;margin-top:4px;
   }
 
-  /* roll number */
-  .rollhead{text-align:center;line-height:1}
-  .rollhead .num{
-    font-family:var(--display);font-size:clamp(46px,9vh,84px);
+  /* roll counter — top-left, manual control */
+  .rollcounter{text-align:center;line-height:1}
+  .rc-row{display:flex;align-items:center;gap:8px;justify-content:center}
+  .rc-num{
+    font-family:var(--display);font-size:clamp(40px,min(12.5vh,11vw),110px);
     letter-spacing:-.02em;font-variant-numeric:tabular-nums;
     background:linear-gradient(180deg,#fff,#9FC6E6);
     -webkit-background-clip:text;background-clip:text;color:transparent;
+    border:none;text-align:center;width:2.1em;font-weight:400;
+    -moz-appearance:textfield;appearance:textfield;
   }
-  .rollhead .cap{
-    display:block;margin-top:7px;font-size:11px;font-weight:800;
+  .rc-num::-webkit-inner-spin-button,.rc-num::-webkit-outer-spin-button{
+    -webkit-appearance:none;margin:0;
+  }
+  .rc-num:focus{outline:none}
+  .rc-btn{
+    flex:none;width:38px;height:38px;border-radius:50%;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+    font-size:20px;font-weight:800;cursor:pointer;line-height:1;
+    transition:border-color .15s ease,color .15s ease;
+  }
+  .rc-btn:hover{border-color:var(--brand);color:var(--brand-lite)}
+  .rc-btn:active{transform:scale(.92)}
+  .rc-cap{
+    display:block;margin-top:5px;font-size:11px;font-weight:800;
     letter-spacing:.24em;color:var(--mute);
   }
 
@@ -296,6 +316,12 @@
     .stage{order:1}
     .rail{order:2;width:auto;height:min(70vh,440px);border-inline-end:none;border-top:1px solid var(--line)}
   }
+  @media (max-width:480px){
+    .topbar{flex-wrap:wrap;gap:10px}
+    .brand .name{font-size:16px}
+    .rc-row{gap:6px}
+    .rc-btn{width:32px;height:32px;font-size:17px}
+  }
   @media (prefers-reduced-motion:reduce){
     .dial,.lamp{transition:none}.dial:active{transform:none}
     .card,.msg,.stage>*{animation:none}
@@ -321,23 +347,33 @@
 
   <main class="stage">
 
-    <div class="brand">
-      <svg class="mark" width="42" height="42" viewBox="0 0 42 42" fill="none" aria-hidden="true">
-        <rect x="1" y="1" width="40" height="40" rx="12" fill="#101820" stroke="#28333B"/>
-        <path d="M9 27c5-9 8-13 12-13s4 5 0 7-8-2-3-8" stroke="#1F7FD6" stroke-width="2.6" stroke-linecap="round"/>
-        <path d="M13 33c8-4 12-11 18-11" stroke="#5BB0F5" stroke-width="2.2" stroke-linecap="round" opacity=".85"/>
-        <path d="M11 15c6 2 13 1 20-5" stroke="#5BB0F5" stroke-width="1.8" stroke-linecap="round" opacity=".55"/>
-        <circle cx="31.5" cy="12" r="2" fill="#5BB0F5"/>
-      </svg>
-      <div>
-        <div class="name">SPUN<span>TECH</span></div>
-        <span class="sub">בקרת גליל</span>
+    <div class="topbar">
+      <div class="brand">
+        <svg class="mark" width="40" height="40" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#BFEAF5"/>
+              <stop offset=".55" stop-color="#3FB6D8"/>
+              <stop offset="1" stop-color="#1F86AE"/>
+            </linearGradient>
+          </defs>
+          <path d="M60 10C40 40 25 62 25 80a35 35 0 0 0 70 0c0-18-15-40-35-70Z" fill="url(#drop)"/>
+          <ellipse cx="47" cy="62" rx="7" ry="11" fill="#fff" opacity=".55"/>
+        </svg>
+        <div>
+          <div class="name">SPUN·TECH</div>
+          <span class="sub">בקרת גליל</span>
+        </div>
       </div>
-    </div>
 
-    <div class="rollhead">
-      <span class="num" id="count">0</span>
-      <span class="cap">מספר גליל במשמרת</span>
+      <div class="rollcounter">
+        <div class="rc-row">
+          <button class="rc-btn" id="rcMinus" aria-label="הפחת גליל" type="button">−</button>
+          <input class="rc-num" id="count" type="number" inputmode="numeric" min="0" value="0" aria-label="מספר גליל — ניתן לערוך ידנית">
+          <button class="rc-btn" id="rcPlus" aria-label="הוסף גליל" type="button">+</button>
+        </div>
+        <span class="rc-cap">מספר גליל במשמרת</span>
+      </div>
     </div>
 
     <button class="dial" id="dial" data-state="stop" aria-pressed="false">
@@ -409,7 +445,8 @@
   const $ = id => document.getElementById(id);
   const dial=$('dial'), word=$('word'), lamp=$('lamp'), clock=$('clock'),
         countEl=$('count'), veil=$('veil'), ack=$('ack'), elapsed=$('elapsed'),
-        intervalInput=$('interval'), resetBtn=$('reset'), undoBtn=$('undo');
+        intervalInput=$('interval'), resetBtn=$('reset'), undoBtn=$('undo'),
+        rcMinus=$('rcMinus'), rcPlus=$('rcPlus');
 
   let go=false, count=0, minutes=30, deadline=Date.now()+minutes*60000;
 
@@ -431,7 +468,12 @@
     dial.dataset.state=s; lamp.dataset.state=s;
     dial.setAttribute('aria-pressed',String(go));
     word.textContent = go?'בדיקה':'לא בדיקה';
-    countEl.textContent = count;
+    countEl.value = count;
+  }
+
+  function setCount(n){
+    count = Math.max(0, Math.round(n)||0);
+    render(); save();
   }
 
   function resetTimer(){ deadline = Date.now()+minutes*60000; }
@@ -490,6 +532,10 @@
   document.querySelectorAll('.preset').forEach(b=>{
     b.addEventListener('click',()=>applyMinutes(+b.dataset.min));
   });
+
+  rcMinus.addEventListener('click',()=>setCount(count-1));
+  rcPlus.addEventListener('click',()=>setCount(count+1));
+  countEl.addEventListener('change',()=>setCount(+countEl.value));
 
   undoBtn.addEventListener('click',()=>{
     if(go) count=Math.max(0,count-1);
