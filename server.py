@@ -75,8 +75,6 @@ class Handler(SimpleHTTPRequestHandler):
                 notes = data['notes']
             self.send_json({'you': me, 'messages': messages, 'notes': notes})
             return
-        if self.path in ('/', '/index.html'):
-            self.path = '/main.html'
         super().do_GET()
 
     def do_POST(self):

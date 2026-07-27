@@ -67,6 +67,8 @@
     box-shadow:0 0 10px var(--go);animation:breathe 2.6s ease-in-out infinite;
   }
   @keyframes breathe{50%{opacity:.35}}
+  .rail.offline .dot{background:var(--stop);box-shadow:0 0 10px var(--stop);animation:none}
+  .rail.offline .composer{opacity:.4;pointer-events:none}
   .whoami{margin-top:6px;font-size:12.5px;color:var(--mute);font-weight:600}
   .whoami b{color:var(--brand-lite);font-weight:800}
 
@@ -215,6 +217,7 @@
   .chip.danger:hover{border-color:var(--stop);color:#FFB4B4}
   .chip.tiny{padding:7px 11px;font-size:12px}
   .chip.on{background:rgba(31,127,214,.16);border-color:var(--brand);color:var(--brand-lite)}
+  .chip:disabled{opacity:.4;cursor:not-allowed}
 
   .timeset{
     display:flex;align-items:center;gap:7px;background:var(--panel);
@@ -516,7 +519,8 @@
 
   /* ---- shared state: chat + notes (server, animal name per IP) ---- */
   const chatLog=$('chatLog'), chatInput=$('chatInput'), chatSend=$('chatSend'),
-        chatMe=$('chatMe'), notesBody=$('notesBody'), notesMeta=$('notesMeta');
+        chatMe=$('chatMe'), notesBody=$('notesBody'), notesMeta=$('notesMeta'),
+        rail=document.querySelector('.rail');
   const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML;};
   let myName='';
 
@@ -543,9 +547,14 @@
         : '<div class="empty">אין הודעות עדיין<br>תהיה הראשון לכתוב</div>';
       if(atBottom) chatLog.scrollTop=chatLog.scrollHeight;
       paintNotes(d.notes);
+      rail.classList.remove('offline');
+      $('notesEdit').disabled=false;
     }catch(e){
-      chatLog.innerHTML='<div class="empty" style="color:#FF9C9C">'+
-        'הצ׳אט זמין רק דרך שרת האתר<br>(python3 server.py)</div>';
+      rail.classList.add('offline');
+      $('notesEdit').disabled=true;
+      chatMe.textContent='לא מחובר';
+      chatLog.innerHTML='<div class="empty">הצ׳אט וההערות עובדים רק כשהאתר רץ<br>'+
+        'מהשרת המקומי במפעל<br><br><code>python3 server.py</code></div>';
     }
   }
 
