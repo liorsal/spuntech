@@ -312,11 +312,54 @@
   .card input:focus-visible,.card textarea:focus-visible{outline:3px solid var(--brand-lite);outline-offset:2px}
   .passerr{color:#FF9C9C;font-size:13px;font-weight:700;margin:-5px 0 12px}
 
+  /* ---------- mobile: chat lives behind a floating button ---------- */
+  .chat-fab,.rail-close,.rail-scrim{display:none}
+
   @media (max-width:900px){
     body{overflow:auto}
     .app{flex-direction:column;height:auto;min-height:100%}
     .stage{order:1}
-    .rail{order:2;width:auto;height:min(70vh,440px);border-inline-end:none;border-top:1px solid var(--line)}
+    .rail{
+      position:fixed;inset:auto 0 0 0;z-index:60;
+      width:auto;height:min(82vh,600px);
+      border-inline-end:none;border-top:1px solid var(--line);
+      border-radius:20px 20px 0 0;
+      transform:translateY(101%);transition:transform .26s cubic-bezier(.2,.7,.3,1);
+      box-shadow:0 -12px 40px rgba(0,0,0,.6);
+    }
+    .rail.open{transform:none}
+    .composer{padding-bottom:max(12px,env(safe-area-inset-bottom))}
+
+    .rail-scrim{
+      display:block;position:fixed;inset:0;z-index:59;
+      background:rgba(0,0,0,.55);opacity:0;pointer-events:none;
+      transition:opacity .26s ease;
+    }
+    .rail-scrim.on{opacity:1;pointer-events:auto}
+
+    .chat-fab{
+      display:flex;align-items:center;gap:8px;
+      position:fixed;inset:auto auto max(16px,env(safe-area-inset-bottom)) 16px;z-index:58;
+      background:var(--brand);color:#fff;border:none;
+      font-family:inherit;font-size:14.5px;font-weight:800;
+      padding:13px 18px;border-radius:999px;cursor:pointer;
+      box-shadow:0 8px 24px rgba(0,0,0,.5);
+    }
+    .chat-fab:active{transform:scale(.95)}
+    .chat-fab[hidden]{display:none}
+    .chat-fab .fab-dot{
+      width:8px;height:8px;border-radius:50%;background:#8FE6BC;
+      box-shadow:0 0 8px rgba(143,230,188,.9);
+    }
+    .rail.offline ~ .chat-fab .fab-dot{background:#FFB4B0;box-shadow:none}
+
+    .rail-close{
+      display:block;position:absolute;inset-block-start:12px;inset-inline-end:14px;
+      width:34px;height:34px;border-radius:50%;
+      background:var(--panel-2);border:1px solid var(--line);color:var(--ink);
+      font-size:19px;font-weight:800;line-height:1;cursor:pointer;
+    }
+    .rail-head{padding-inline-end:58px}
   }
   @media (max-width:480px){
     .topbar{flex-wrap:wrap;gap:10px}
@@ -335,7 +378,10 @@
 
 <div class="app">
 
+  <div class="rail-scrim" id="railScrim"></div>
+
   <aside class="rail">
+    <button class="rail-close" id="railClose" type="button" aria-label="סגור צ'אט">×</button>
     <div class="rail-head">
       <h2><span class="dot"></span>צ'אט מעבדה</h2>
       <p class="whoami">אתה מחובר בתור <b id="chatMe">…</b></p>
@@ -414,6 +460,10 @@
     </section>
 
   </main>
+
+  <button class="chat-fab" id="chatFab" type="button">
+    <span class="fab-dot"></span>צ'אט מעבדה
+  </button>
 </div>
 
 <div class="veil" id="veil" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle">
@@ -633,6 +683,23 @@
   }
   chatSend.addEventListener('click',sendMsg);
   chatInput.addEventListener('keydown',e=>{ if(e.key==='Enter') sendMsg(); });
+
+  /* ---- mobile: chat opens from a floating button ---- */
+  const chatFab=$('chatFab'), railScrim=$('railScrim'), railClose=$('railClose');
+  function openChat(){
+    rail.classList.add('open'); railScrim.classList.add('on');
+    chatFab.hidden=true; chatLog.scrollTop=chatLog.scrollHeight;
+  }
+  function closeChat(){
+    rail.classList.remove('open'); railScrim.classList.remove('on');
+    chatFab.hidden=false;
+  }
+  chatFab.addEventListener('click',openChat);
+  railClose.addEventListener('click',closeChat);
+  railScrim.addEventListener('click',closeChat);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape' && rail.classList.contains('open')) closeChat();
+  });
 
   /* ---- notes editing (password protected) ---- */
   const NOTES_PASS='1111';
