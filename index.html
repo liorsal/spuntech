@@ -27,7 +27,7 @@
     --body:'Assistant',system-ui,sans-serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-  html,body{height:100%}
+  html,body{height:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   body{
     background:var(--void);
     font-family:var(--body);
@@ -142,9 +142,11 @@
     letter-spacing:-.02em;font-variant-numeric:tabular-nums;
     background:linear-gradient(180deg,#fff,#9FC6E6);
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    border:none;text-align:center;width:2.1em;font-weight:400;
+    border:none;text-align:center;width:2.3ch;max-width:60vw;font-weight:400;
     -moz-appearance:textfield;appearance:textfield;
+    transition:font-size .15s ease;
   }
+  .rc-num.long{font-size:clamp(24px,min(6vh,6.5vw),56px)}
   .rc-num::-webkit-inner-spin-button,.rc-num::-webkit-outer-spin-button{
     -webkit-appearance:none;margin:0;
   }
@@ -469,6 +471,9 @@
     dial.setAttribute('aria-pressed',String(go));
     word.textContent = go?'בדיקה':'לא בדיקה';
     countEl.value = count;
+    const digits = String(count).length;
+    countEl.style.width = Math.max(2.3, digits+.6) + 'ch';
+    countEl.classList.toggle('long', digits>4);
   }
 
   function setCount(n){
@@ -543,9 +548,10 @@
   });
 
   resetBtn.addEventListener('click',()=>{
-    if(confirm('לאפס את מונה המשמרת?')){
-      count=0; go=false; resetTimer(); render(); save(); tick();
-    }
+    const ans=prompt('התחלת משמרת חדשה — מה מספר הגליל הראשון?','0');
+    if(ans===null) return;
+    const start=Math.max(0, Math.round(+ans)||0);
+    count=start; go=false; resetTimer(); render(); save(); tick();
   });
 
   /* ---- print button: green for 3 minutes, then back to gray ---- */
@@ -563,7 +569,17 @@
     if(navigator.vibrate) navigator.vibrate(20);
   });
 
-  /* ---- shared state: chat + notes (server, animal name per IP) ---- */
+  /* ---- shared state: chat + notes (AWS backend, animal name per device) ---- */
+  const API='https://1zgv7ndow7.execute-api.us-east-1.amazonaws.com';
+  const CID=(()=>{
+    let c=localStorage.getItem('roll-check-cid');
+    if(!c){
+      c = (crypto.randomUUID ? crypto.randomUUID()
+                             : Date.now()+'-'+Math.random().toString(36).slice(2));
+      localStorage.setItem('roll-check-cid',c);
+    }
+    return c;
+  })();
   const chatLog=$('chatLog'), chatInput=$('chatInput'), chatSend=$('chatSend'),
         chatMe=$('chatMe'), notesBody=$('notesBody'), notesMeta=$('notesMeta'),
         rail=document.querySelector('.rail');
@@ -579,7 +595,7 @@
 
   async function pull(){
     try{
-      const r=await fetch('/api/state');
+      const r=await fetch(API+'/state?cid='+encodeURIComponent(CID));
       if(!r.ok) throw 0;
       const d=await r.json();
       myName=d.you; chatMe.textContent=d.you;
@@ -599,8 +615,8 @@
       rail.classList.add('offline');
       $('notesEdit').disabled=true;
       chatMe.textContent='לא מחובר';
-      chatLog.innerHTML='<div class="empty">הצ׳אט וההערות עובדים רק כשהאתר רץ<br>'+
-        'מהשרת המקומי במפעל<br><br><code>python3 server.py</code></div>';
+      chatLog.innerHTML='<div class="empty">אין חיבור לשרת הצ׳אט<br>'+
+        'בדוק את חיבור האינטרנט —<br>ההודעות יחזרו כשהחיבור יחזור</div>';
     }
   }
 
@@ -609,9 +625,9 @@
     if(!t) return;
     chatInput.value='';
     try{
-      await fetch('/api/chat',{method:'POST',
+      await fetch(API+'/chat',{method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({text:t})});
+        body:JSON.stringify({cid:CID,text:t})});
     }catch(e){}
     pull(); chatInput.focus();
   }
@@ -648,9 +664,9 @@
   notesClose.addEventListener('click',()=>notesVeil.classList.remove('on'));
   notesSave.addEventListener('click',async()=>{
     try{
-      await fetch('/api/notes',{method:'POST',
+      await fetch(API+'/notes',{method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({text:notesText.value,pass:NOTES_PASS})});
+        body:JSON.stringify({cid:CID,text:notesText.value,pass:NOTES_PASS})});
     }catch(e){}
     notesSave.textContent='נשמר ✓';
     setTimeout(()=>{ notesSave.textContent='שמור'; },1200);
