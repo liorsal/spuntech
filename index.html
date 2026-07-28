@@ -635,12 +635,14 @@
         rail=document.querySelector('.rail');
   const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML;};
   let myName='';
+  let lastLog='';
 
   function paintNotes(n){
     const txt=(n&&n.text||'').trim();
-    notesBody.textContent = txt || 'אין הערות כרגע';
+    const meta = txt && n.by ? `· עודכן ע"י ${n.by} ב-${n.time}` : '';
+    if(notesBody.textContent!==(txt||'אין הערות כרגע')) notesBody.textContent = txt || 'אין הערות כרגע';
     notesBody.classList.toggle('empty', !txt);
-    notesMeta.textContent = txt && n.by ? `· עודכן ע"י ${n.by} ב-${n.time}` : '';
+    if(notesMeta.textContent!==meta) notesMeta.textContent = meta;
   }
 
   async function pull(){
@@ -648,16 +650,21 @@
       const r=await fetch(API+'/state?cid='+encodeURIComponent(CID));
       if(!r.ok) throw 0;
       const d=await r.json();
-      myName=d.you; chatMe.textContent=d.you;
-      const atBottom = chatLog.scrollTop+chatLog.clientHeight >= chatLog.scrollHeight-40;
-      chatLog.innerHTML = d.messages.length
+      myName=d.you;
+      if(chatMe.textContent!==d.you) chatMe.textContent=d.you;
+      const html = d.messages.length
         ? d.messages.map(m=>
             `<div class="msg${m.name===d.you?' mine':''}">`+
             `<div class="meta"><span class="who">${esc(m.name)}</span>`+
             `<span class="when">${esc(m.time)}</span></div>`+
             `<div class="txt">${esc(m.text)}</div></div>`).join('')
         : '<div class="empty">אין הודעות עדיין<br>תהיה הראשון לכתוב</div>';
-      if(atBottom) chatLog.scrollTop=chatLog.scrollHeight;
+      if(html!==lastLog){
+        const atBottom = chatLog.scrollTop+chatLog.clientHeight >= chatLog.scrollHeight-40;
+        chatLog.innerHTML = html;
+        lastLog = html;
+        if(atBottom) chatLog.scrollTop=chatLog.scrollHeight;
+      }
       paintNotes(d.notes);
       rail.classList.remove('offline');
       $('notesEdit').disabled=false;
@@ -665,8 +672,9 @@
       rail.classList.add('offline');
       $('notesEdit').disabled=true;
       chatMe.textContent='לא מחובר';
-      chatLog.innerHTML='<div class="empty">אין חיבור לשרת הצ׳אט<br>'+
+      const off='<div class="empty">אין חיבור לשרת הצ׳אט<br>'+
         'בדוק את חיבור האינטרנט —<br>ההודעות יחזרו כשהחיבור יחזור</div>';
+      if(off!==lastLog){ chatLog.innerHTML=off; lastLog=off; }
     }
   }
 
