@@ -26,6 +26,7 @@ def load():
         'names': item.get('names') or {},
         'messages': item.get('messages') or [],
         'notes': item.get('notes') or {'text': '', 'by': '', 'time': ''},
+        'alert': item.get('alert') or {},
     }
 
 
@@ -110,7 +111,25 @@ def handler(event, context):
     me = name_for(data, cid)
 
     if method == 'GET':
-        return reply({'you': me, 'messages': data['messages'][-100:], 'notes': data['notes']})
+        return reply({
+            'you': me,
+            'messages': data['messages'][-100:],
+            'notes': data['notes'],
+            'alert': data['alert'],
+        })
+
+    if path.endswith('/alert'):
+        text = str(body.get('text', '')).strip()[:200]
+        if not text:
+            return reply({'ok': False}, 400)
+        alert = {'id': str(int(time.time() * 1000)), 'text': text, 'by': me, 'time': now(), 'cid': cid}
+        TABLE.update_item(
+            Key=KEY,
+            UpdateExpression='SET #a = :a',
+            ExpressionAttributeNames={'#a': 'alert'},
+            ExpressionAttributeValues={':a': alert},
+        )
+        return reply({'ok': True, 'alert': alert})
 
     if path.endswith('/notes'):
         if str(body.get('pass', '')) != NOTES_PASS:

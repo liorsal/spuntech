@@ -117,10 +117,10 @@
   @keyframes rise{from{opacity:0;transform:translateY(14px)}}
 
   /* top bar: brand (right, RTL) + roll counter (left) */
-  .topbar{display:flex;align-items:flex-start;justify-content:space-between;width:100%}
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;width:100%;gap:12px}
 
   /* brand lockup */
-  .brand{display:flex;align-items:center;gap:10px}
+  .brand{display:flex;align-items:center;gap:10px;min-width:0;flex-shrink:1}
   .brand .mark{
     background:#fff;border-radius:10px;padding:4px 6px;
     box-shadow:0 3px 10px rgba(0,0,0,.35);
@@ -135,18 +135,20 @@
   }
 
   /* roll counter — top-left, manual control */
-  .rollcounter{text-align:center;line-height:1}
-  .rc-row{display:flex;align-items:center;gap:8px;justify-content:center}
+  .rollcounter{text-align:center;line-height:1;flex:none}
+  .rc-row{display:flex;align-items:center;gap:8px;justify-content:center;flex-wrap:nowrap}
   .rc-num{
     font-family:var(--display);font-size:clamp(40px,min(12.5vh,11vw),110px);
     letter-spacing:-.02em;font-variant-numeric:tabular-nums;
     background:linear-gradient(180deg,#fff,#9FC6E6);
     -webkit-background-clip:text;background-clip:text;color:transparent;
-    border:none;text-align:center;width:2.3ch;max-width:60vw;font-weight:400;
+    border:none;text-align:center;width:2.3ch;max-width:none;font-weight:400;
+    flex:none;padding:0;
     -moz-appearance:textfield;appearance:textfield;
     transition:font-size .15s ease;
   }
-  .rc-num.long{font-size:clamp(24px,min(6vh,6.5vw),56px)}
+  .rc-num.mid{font-size:clamp(28px,min(8vh,7.5vw),74px)}
+  .rc-num.long{font-size:clamp(22px,min(5.4vh,5.6vw),50px)}
   .rc-num::-webkit-inner-spin-button,.rc-num::-webkit-outer-spin-button{
     -webkit-appearance:none;margin:0;
   }
@@ -312,6 +314,44 @@
   .card input:focus-visible,.card textarea:focus-visible{outline:3px solid var(--brand-lite);outline-offset:2px}
   .passerr{color:#FF9C9C;font-size:13px;font-weight:700;margin:-5px 0 12px}
 
+  /* ---------- urgent alert from the lab: takes over the whole screen ---------- */
+  .blast{
+    position:fixed;inset:0;z-index:90;display:none;
+    place-items:center;text-align:center;padding:20px;
+    background:#B3261E;animation:blastflash 1s steps(1,end) infinite;
+  }
+  .blast.on{display:grid}
+  @keyframes blastflash{0%,60%{background:#B3261E}60.01%,100%{background:#8C1D17}}
+  .blast .kicker{
+    font-size:clamp(12px,3.4vw,16px);font-weight:800;letter-spacing:.3em;
+    color:rgba(255,255,255,.8);margin-bottom:14px;
+  }
+  .blast .big{
+    font-family:var(--display);font-weight:400;color:#fff;
+    font-size:clamp(34px,min(11vh,10vw),96px);line-height:1.08;
+    overflow-wrap:anywhere;max-width:16ch;margin-inline:auto;
+    text-shadow:0 6px 22px rgba(0,0,0,.4);
+  }
+  .blast .from{
+    margin-top:20px;font-size:clamp(13px,3.6vw,17px);font-weight:800;
+    color:rgba(255,255,255,.85);
+  }
+  .blast button{
+    margin-top:clamp(24px,5vh,44px);background:#fff;color:#8C1D17;border:none;
+    font-family:inherit;font-size:clamp(17px,4.6vw,22px);font-weight:800;
+    padding:18px 46px;border-radius:999px;cursor:pointer;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  .blast button:active{transform:scale(.96)}
+  .alert-btn{
+    width:100%;margin-top:10px;background:transparent;color:#FF9C9C;
+    border:1px solid rgba(255,156,156,.45);border-radius:10px;
+    font-family:inherit;font-size:12.5px;font-weight:800;
+    padding:9px;cursor:pointer;
+  }
+  .alert-btn:hover{background:rgba(255,156,156,.1)}
+  .rail.offline .alert-btn{opacity:.4;pointer-events:none}
+
   /* ---------- mobile: chat lives behind a floating button ---------- */
   .chat-fab,.rail-close,.rail-scrim{display:none}
 
@@ -385,6 +425,7 @@
     <div class="rail-head">
       <h2><span class="dot"></span>צ'אט מעבדה</h2>
       <p class="whoami">אתה מחובר בתור <b id="chatMe">…</b></p>
+      <button class="alert-btn" id="alertBtn" type="button">שלח התראה דחופה לאריזה</button>
     </div>
     <div class="log" id="chatLog"></div>
     <div class="composer">
@@ -466,6 +507,15 @@
   </button>
 </div>
 
+<div class="blast" id="blast" role="alertdialog" aria-modal="true" aria-labelledby="blastText">
+  <div>
+    <div class="kicker">הודעה דחופה מהמעבדה</div>
+    <div class="big" id="blastText"></div>
+    <div class="from" id="blastFrom"></div>
+    <button id="blastAck" type="button">הבנתי</button>
+  </div>
+</div>
+
 <div class="veil" id="veil" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle">
   <div class="card">
     <h2 id="alertTitle">עשית בדיקה?</h2>
@@ -522,7 +572,8 @@
     word.textContent = go?'בדיקה':'לא בדיקה';
     countEl.value = count;
     const digits = String(count).length;
-    countEl.style.width = Math.max(2.3, digits+.6) + 'ch';
+    countEl.style.width = Math.max(2.3, digits+.7) + 'ch';
+    countEl.classList.toggle('mid', digits===3||digits===4);
     countEl.classList.toggle('long', digits>4);
   }
 
@@ -560,10 +611,10 @@
     if(navigator.vibrate) navigator.vibrate([200,100,200]);
   }
 
-  /* a roll is counted when the dial turns to "בדיקה" */
+  /* every dial press is a roll — an unchecked roll is still a roll */
   dial.addEventListener('click',()=>{
     go=!go;
-    if(go) count++;
+    count++;
     resetTimer(); render(); save();
     if(navigator.vibrate) navigator.vibrate(30);
   });
@@ -593,7 +644,7 @@
   countEl.addEventListener('change',()=>setCount(+countEl.value));
 
   undoBtn.addEventListener('click',()=>{
-    if(go) count=Math.max(0,count-1);
+    count=Math.max(0,count-1);
     go=!go; render(); save();
   });
 
@@ -666,6 +717,7 @@
         if(atBottom) chatLog.scrollTop=chatLog.scrollHeight;
       }
       paintNotes(d.notes);
+      showAlert(d.alert);
       rail.classList.remove('offline');
       $('notesEdit').disabled=false;
     }catch(e){
@@ -691,6 +743,57 @@
   }
   chatSend.addEventListener('click',sendMsg);
   chatInput.addEventListener('keydown',e=>{ if(e.key==='Enter') sendMsg(); });
+
+  /* ---- urgent alert: lab sends, packing screen gets a full-screen takeover ---- */
+  const blast=$('blast'), blastText=$('blastText'), blastFrom=$('blastFrom'),
+        blastAck=$('blastAck'), alertBtn=$('alertBtn');
+  const SEEN='roll-check-alert-seen';
+  let blastSiren=null;
+
+  function siren(){
+    beep();
+    blastSiren=setInterval(()=>{
+      beep();
+      if(navigator.vibrate) navigator.vibrate([300,120,300]);
+    },1600);
+  }
+  function showAlert(a){
+    if(!a || !a.id) return;
+    if(a.cid===CID || localStorage.getItem(SEEN)===a.id) return;
+    if(blast.classList.contains('on')) return;
+    if(Date.now()-(+a.id||0) > 10*60*1000) return;  // stale alert, don't ambush a fresh device
+    blastText.textContent=a.text;
+    blastFrom.textContent=`${a.by} · ${a.time}`;
+    blast.classList.add('on');
+    blastAck.focus();
+    siren();
+    if(navigator.vibrate) navigator.vibrate([300,120,300]);
+    blast.dataset.id=a.id;
+  }
+  blastAck.addEventListener('click',()=>{
+    clearInterval(blastSiren);
+    localStorage.setItem(SEEN, blast.dataset.id||'');
+    blast.classList.remove('on');
+  });
+  alertBtn.addEventListener('click',async()=>{
+    const t=prompt('מה ההודעה הדחופה? (תוצג ענק על מסך האריזה)');
+    if(t===null) return;
+    const text=t.trim();
+    if(!text) return;
+    alertBtn.disabled=true; alertBtn.textContent='שולח…';
+    try{
+      const r=await fetch(API+'/alert',{method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({cid:CID,text})});
+      const d=await r.json();
+      if(d.alert) localStorage.setItem(SEEN,d.alert.id);
+      alertBtn.textContent='נשלח ✓';
+    }catch(e){ alertBtn.textContent='השליחה נכשלה'; }
+    setTimeout(()=>{
+      alertBtn.textContent='שלח התראה דחופה לאריזה';
+      alertBtn.disabled=false;
+    },1600);
+  });
 
   /* ---- mobile: chat opens from a floating button ---- */
   const chatFab=$('chatFab'), railScrim=$('railScrim'), railClose=$('railClose');
